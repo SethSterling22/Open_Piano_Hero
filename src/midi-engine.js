@@ -48,6 +48,7 @@ export class MidiEngine {
     this.onNoteOff = null;  // (note, channel, timestamp) => {}
     this.onPedal = null;    // (pedalType, value, channel, timestamp) => {}
     this.onDeviceChange = null; // (inputs, outputs) => {}
+    this.onRawMessage = null;   // (data, timestamp) => {} — for diagnostics
 
     // Active notes tracking
     this.activeNotes = new Set();
@@ -179,6 +180,9 @@ export class MidiEngine {
     const msgType = status & 0xf0;
     const channel = status & 0x0f;
     const timestamp = event.timeStamp;
+
+    // Raw message callback for diagnostics
+    this.onRawMessage?.(event.data, timestamp);
 
     switch (msgType) {
       case MSG.NOTE_ON:

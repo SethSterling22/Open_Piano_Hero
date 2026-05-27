@@ -55,13 +55,14 @@ Combo multiplier increases at 10, 25, 50, and 100 consecutive hits (up to 5×).
 ## Project Structure
 
 ```
-piano-hero/
+Open_Piano_Hero/
 ├── index.html              # Main HTML with UI and styles
 ├── package.json            # Dependencies and scripts
 ├── README.md
 └── src/
     ├── main.js             # App entry point, wires everything together
     ├── midi-engine.js      # Web MIDI API interface (input/output)
+    ├── midi-diagnostics.js # MIDI connection testing & key verification
     ├── chart-parser.js     # MIDI file → game chart converter
     ├── game-engine.js      # Timing judge, scoring, game state
     └── renderer.js         # Canvas rendering (notes, keyboard, HUD)
@@ -87,6 +88,20 @@ Disklavier ──USB MIDI──► midi-engine.js ──events──► game-eng
 **game-engine.js** — Core game logic. Manages the game state machine (menu → countdown → playing → paused → results). The timing judge compares player input against chart notes with configurable hit windows. Handles scoring with combos and multipliers.
 
 **renderer.js** — Canvas 2D rendering engine. Draws the falling notes (color-coded by hand), an 88-key piano keyboard with press feedback, hit line, judgment animations, particle effects, and the HUD with score/combo/progress.
+
+**midi-diagnostics.js** — Visual testing tool for verifying piano MIDI connection. Provides a real-time 88-key keyboard display, velocity meters, pedal indicators, key coverage tracker, and a scrolling event log showing every MIDI message received.
+
+## MIDI Diagnostics
+
+Before playing, use the **Test MIDI Connection** button on the main menu to verify your piano is working correctly. The diagnostics screen shows:
+
+- **Visual Keyboard**: All 88 keys light up in real time as you press them (cyan for white keys, orange for black keys), with intensity proportional to velocity
+- **Velocity Bar**: Shows the numeric velocity value and dynamic marking (pp through ff) of the last note played
+- **Pedal Indicators**: Sustain, Sostenuto, and Soft pedals light up green when active
+- **Key Coverage**: A miniature keyboard bar tracks which keys you've tested — aim for 100% to confirm all keys are responding
+- **Last Note Display**: Shows the note name, MIDI number, velocity, and channel of the most recent note
+- **Live Statistics**: Total notes played, notes per second, average velocity, active notes, and pitch range
+- **Event Log**: Scrolling log of every MIDI event (Note On/Off, pedals, raw messages) with timestamps
 
 ## Disklavier-Specific Features
 

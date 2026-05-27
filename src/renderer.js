@@ -78,19 +78,23 @@ export class Renderer {
     this.activeKeys = new Set(); // Currently pressed keys for visual feedback
 
     // Handle resize
-    this._resize();
-    window.addEventListener('resize', () => this._resize());
+    window.addEventListener('resize', () => this.resize());
   }
 
-  _resize() {
+  /** Call this whenever the canvas becomes visible or the window resizes */
+  resize() {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
+
+    // Guard: skip if canvas is hidden (0×0 dimensions)
+    if (rect.width === 0 || rect.height === 0) return;
 
     this.width = rect.width;
     this.height = rect.height;
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
-    this.ctx.scale(dpr, dpr);
+    // Use setTransform instead of scale to avoid accumulation on repeated resizes
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Layout: HUD at top, play area in middle, keyboard at bottom
     this.keyboardHeight = Math.max(80, this.height * 0.12);

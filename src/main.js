@@ -1,12 +1,12 @@
 /**
  * Piano Hero — Main entry point
- *
- * Wires together all modules and manages the application lifecycle.
+ * Wires together MIDI, game engine, renderer, and diagnostics.
  */
 
 import { MidiEngine } from './midi-engine.js';
 import { GameEngine, GameState } from './game-engine.js';
 import { Renderer } from './renderer.js';
+import { MidiDiagnostics } from './midi-diagnostics.js';
 import { parseMidiFile, generateDemoChart } from './chart-parser.js';
 
 // ─── Application State ───────────────────────────────────────────
@@ -14,66 +14,83 @@ import { parseMidiFile, generateDemoChart } from './chart-parser.js';
 const midi = new MidiEngine();
 const game = new GameEngine();
 let renderer = null;
+let diagnostics = null;
 let animationId = null;
-
-// ─── DOM References ──────────────────────────────────────────────
+let currentScreen = 'menu';
 
 const $ = (sel) => document.querySelector(sel);
-const canvas = $('#game-canvas');
-const menuScreen = $('#menu-screen');
-const gameScreen = $('#game-screen');
-const resultsOverlay = $('#results-overlay');
-const midiStatus = $('#midi-status');
-const deviceSelect = $('#device-select');
-const loadMidiBtn = $('#load-midi');
-const midiFileInput = $('#midi-file');
-const playDemoBtn = $('#play-demo');
-const latencyInput = $('#latency-offset');
-const scrollSpeedInput = $('#scroll-speed');
 
 // ─── Initialize ──────────────────────────────────────────────────
 
 async function init() {
+  const canvas = $('#game-canvas');
   renderer = new Renderer(canvas);
 
   // Initialize MIDI
   try {
-    const { inputs, outputs } = await midi.init();
-    updateMidiDeviceList(inputs);
-    midiStatus.textContent = inputs.length > 0
-      ? `${inputs.length} device(s) found`
-      : 'No MIDI devices detected';
-    midiStatus.className = inputs.length > 0 ? 'status-ok' : 'status-warn';
+    const { inputs } = await midi.init();
+    updateDeviceList(inputs);
+    const status = $('#midi-status');
+    const dot = $('#midi-dot');
 
-    // Auto-connect
     if (inputs.length > 0) {
+      status.textContent = `${inputs.length} device(s) found`;
+      dot.className = 'midi-dot connected';
       midi.autoConnect();
       if (midi.selectedInput) {
-        midiStatus.textContent = `Connected: ${midi.selectedInput.name}`;
-        highlightSelectedDevice(midi.selectedInput.id);
+        status.textContent = `Connected: ${midi.selectedInput.name}`;
+        $('#device-select').value = midi.selectedInput.id;
       }
+    } else {
+      status.textContent = 'No MIDI devices detected — connect piano and refresh';
+      dot.className = 'midi-dot disconnected';
     }
   } catch (err) {
-    midiStatus.textContent = err.message;
-    midiStatus.className = 'status-error';
+    $('#midi-status').textContent = err.message;
+    $('#midi-dot').className = 'midi-dot error';
   }
 
-  // Wire MIDI events to game engine
+  // Wire MIDI → game + renderer + diagnostics
   midi.onNoteOn = (note, velocity, channel, timestamp) => {
     renderer.pressKey(note);
     game.handleNoteOn(note, velocity, timestamp);
+    diagnostics?.noteOn(note, velocity, channel, timestamp);
   };
 
   midi.onNoteOff = (note, channel, timestamp) => {
     renderer.releaseKey(note);
     game.handleNoteOff(note, timestamp);
+    diagnostics?.noteOff(note, channel, timestamp);
+  };
+
+  midi.onPedal = (type, value, channel, timestamp) => {
+    diagnostics?.pedalChange(type, value, channel, timestamp);
+  };
+
+  midi.onRawMessage = (data, timestamp) => {
+    diagnostics?.rawMessage(data, timestamp);
   };
 
   midi.onDeviceChange = (inputs) => {
-    updateMidiDeviceList(inputs);
+    updateDeviceList(inputs);
+    const dot = $('#midi-dot');
+    const status = $('#midi-status');
+    if (inputs.length > 0) {
+      dot.className = 'midi-dot connected';
+      if (!midi.selectedInput) {
+        midi.autoConnect();
+        if (midi.selectedInput) {
+          status.textContent = `Connected: ${midi.selectedInput.name}`;
+          $('#device-select').value = midi.selectedInput.id;
+        }
+      }
+    } else {
+      dot.className = 'midi-dot disconnected';
+      status.textContent = 'No MIDI devices';
+    }
   };
 
-  // Wire game events to renderer
+  // Wire game events → renderer
   game.onHit = (noteIndex, judgment, deltaMs) => {
     const note = game.chart.notes[noteIndex];
     renderer.showJudgment(judgment, deltaMs);
@@ -109,34 +126,39 @@ async function init() {
 
 function bindEvents() {
   // Device selection
-  deviceSelect?.addEventListener('change', (e) => {
-    if (e.target.value) {
-      midi.connectInput(e.target.value);
-      // Also try matching output
-      const matchOutput = midi.outputs.find(
-        (o) => o.name === midi.selectedInput?.name
-      );
-      if (matchOutput) midi.connectOutput(matchOutput.id);
-    }
+  $('#device-select')?.addEventListener('change', (e) => {
+    if (!e.target.value) return;
+    midi.connectInput(e.target.value);
+    const matchOutput = midi.outputs.find(
+      (o) => o.name === midi.selectedInput?.name
+    );
+    if (matchOutput) midi.connectOutput(matchOutput.id);
+    $('#midi-status').textContent = `Connected: ${midi.selectedInput.name}`;
+    $('#midi-dot').className = 'midi-dot connected';
   });
 
   // Load MIDI file
-  loadMidiBtn?.addEventListener('click', () => midiFileInput?.click());
-  midiFileInput?.addEventListener('change', handleMidiFileLoad);
+  $('#load-midi')?.addEventListener('click', () => $('#midi-file')?.click());
+  $('#midi-file')?.addEventListener('change', handleMidiFileLoad);
 
   // Play demo
-  playDemoBtn?.addEventListener('click', () => {
+  $('#play-demo')?.addEventListener('click', () => {
     const chart = generateDemoChart();
     startGame(chart);
   });
 
+  // MIDI Test button
+  $('#test-midi')?.addEventListener('click', () => showScreen('diagnostics'));
+  $('#diag-back')?.addEventListener('click', () => showScreen('menu'));
+  $('#diag-reset')?.addEventListener('click', () => diagnostics?.resetStats());
+
   // Settings
-  latencyInput?.addEventListener('input', (e) => {
+  $('#latency-offset')?.addEventListener('input', (e) => {
     game.latencyOffset = parseInt(e.target.value) || 0;
     $('#latency-value').textContent = `${e.target.value}ms`;
   });
 
-  scrollSpeedInput?.addEventListener('input', (e) => {
+  $('#scroll-speed')?.addEventListener('input', (e) => {
     game.scrollSpeed = parseFloat(e.target.value) || 3;
     $('#speed-value').textContent = `${e.target.value}s`;
   });
@@ -156,12 +178,13 @@ function bindEvents() {
         if (game.state === GameState.PLAYING || game.state === GameState.PAUSED) {
           backToMenu();
         }
+        if (currentScreen === 'diagnostics') showScreen('menu');
         break;
     }
   });
 
   // Click to restart from results
-  canvas?.addEventListener('click', () => {
+  $('#game-canvas')?.addEventListener('click', () => {
     if (game.state === GameState.RESULTS) {
       restartGame();
     }
@@ -196,7 +219,13 @@ function startGame(chart) {
   game.reset();
   game.loadChart(chart);
   showScreen('game');
-  game.start();
+
+  // FIX: resize renderer AFTER game-screen becomes visible
+  // Without this, canvas has 0×0 dimensions and renders black
+  requestAnimationFrame(() => {
+    renderer.resize();
+    game.start();
+  });
 }
 
 function restartGame() {
@@ -224,11 +253,9 @@ function handleStateChange(newState, oldState) {
       break;
 
     case GameState.PAUSED:
-      // Could show pause overlay
       break;
 
     case GameState.RESULTS:
-      // Render results screen
       const results = game.getResults();
       renderer.renderResults(results);
       console.log('[Results]', results);
@@ -248,7 +275,6 @@ function startRenderLoop() {
       renderer.render(game);
     } else if (game.state === GameState.PAUSED) {
       renderer.render(game);
-      // Draw pause overlay
       const ctx = renderer.ctx;
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, renderer.width, renderer.height);
@@ -260,7 +286,6 @@ function startRenderLoop() {
       ctx.fillStyle = '#888899';
       ctx.fillText('Press SPACE to resume, ESC to quit', renderer.width / 2, renderer.height / 2 + 40);
     } else if (game.state === GameState.RESULTS) {
-      // Results already rendered in state change handler
       return; // Stop loop
     }
 
@@ -273,25 +298,33 @@ function startRenderLoop() {
 // ─── Screen Management ───────────────────────────────────────────
 
 function showScreen(screen) {
-  menuScreen.classList.toggle('hidden', screen !== 'menu');
-  gameScreen.classList.toggle('hidden', screen !== 'game');
+  currentScreen = screen;
+  $('#menu-screen').classList.toggle('hidden', screen !== 'menu');
+  $('#game-screen').classList.toggle('hidden', screen !== 'game');
+  $('#diag-screen').classList.toggle('hidden', screen !== 'diagnostics');
+
+  if (screen === 'diagnostics') {
+    if (!diagnostics) {
+      diagnostics = new MidiDiagnostics($('#diag-container'));
+    }
+    diagnostics.init();
+  }
 }
 
 // ─── UI Helpers ──────────────────────────────────────────────────
 
-function updateMidiDeviceList(inputs) {
-  if (!deviceSelect) return;
-  deviceSelect.innerHTML = '<option value="">Select MIDI device...</option>';
+function updateDeviceList(inputs) {
+  const sel = $('#device-select');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Select MIDI device...</option>';
   inputs.forEach((d) => {
     const opt = document.createElement('option');
     opt.value = d.id;
-    opt.textContent = `${d.name}${d.isDisklavier ? ' (Disklavier)' : ''}`;
-    deviceSelect.appendChild(opt);
+    opt.textContent = `${d.name}${d.isDisklavier ? ' ★ Disklavier' : ''}`;
+    sel.appendChild(opt);
   });
-}
-
-function highlightSelectedDevice(deviceId) {
-  if (deviceSelect) deviceSelect.value = deviceId;
+  if (prev) sel.value = prev;
 }
 
 // ─── Boot ────────────────────────────────────────────────────────

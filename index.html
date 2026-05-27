@@ -5,221 +5,217 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Piano Hero — Disklavier Edition</title>
   <style>
-    /* ─── Reset & Base ─────────────────────────────────────── */
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0f;
-      --bg-card: #12121a;
-      --bg-card-hover: #1a1a28;
-      --border: #2a2a3a;
-      --text: #e8e8f0;
-      --text-secondary: #888899;
-      --accent: #00d4ff;
-      --accent-warm: #ff6b35;
-      --gold: #ffdd00;
-      --success: #00ff88;
-      --danger: #ff3355;
+      --bg: #0a0a0f; --bg-card: #12121a; --bg-hover: #1a1a28;
+      --border: #2a2a3a; --text: #e8e8f0; --text2: #888899;
+      --accent: #00d4ff; --warm: #ff6b35; --gold: #ffdd00;
+      --ok: #00ff88; --danger: #ff3355;
     }
 
     body {
       font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
+      background: var(--bg); color: var(--text);
+      overflow: hidden; height: 100vh; width: 100vw;
     }
 
     .hidden { display: none !important; }
 
-    /* ─── Menu Screen ──────────────────────────────────────── */
+    /* ─── Menu Screen ──────────────────────────────── */
     #menu-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      padding: 2rem;
-      gap: 2rem;
-    }
-
-    .logo {
-      text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100vh; padding: 2rem; gap: 1.5rem;
     }
 
     .logo h1 {
-      font-size: 3rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), var(--accent-warm));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -1px;
+      font-size: 3rem; font-weight: 800; text-align: center;
+      background: linear-gradient(135deg, var(--accent), var(--warm));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; letter-spacing: -1px;
     }
+    .logo .subtitle { color: var(--text2); font-size: 0.95rem; text-align: center; margin-top: 0.3rem; }
 
-    .logo .subtitle {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      margin-top: 0.3rem;
-    }
-
-    /* ─── Cards ─────────────────────────────────────────────── */
     .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 100%;
-      max-width: 480px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 480px;
     }
-
     .card h2 {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
+      font-size: 0.85rem; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text2); margin-bottom: 1rem;
     }
 
-    /* ─── MIDI Status ──────────────────────────────────────── */
-    .midi-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
+    /* MIDI status */
+    .midi-indicator { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
     .midi-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--danger);
+      width: 10px; height: 10px; border-radius: 50%; background: var(--danger);
+      transition: background 0.3s;
     }
+    .midi-dot.connected { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+    .midi-dot.disconnected { background: var(--danger); }
+    .midi-dot.error { background: var(--danger); }
+    #midi-status { font-size: 0.85rem; color: var(--text2); }
 
-    .status-ok .midi-dot,
-    .status-ok + .midi-controls .midi-dot { background: var(--success); }
-    .status-warn .midi-dot { background: var(--gold); }
-    .status-error .midi-dot { background: var(--danger); }
-
-    #midi-status {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    /* ─── Form Controls ────────────────────────────────────── */
+    /* Form controls */
     select, input[type="range"] {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; padding: 0.5rem 0.75rem; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 0.9rem; outline: none;
     }
-
-    select:focus, input:focus {
-      border-color: var(--accent);
-    }
-
-    .form-row {
-      margin-bottom: 0.75rem;
-    }
-
+    select:focus, input:focus { border-color: var(--accent); }
+    .form-row { margin-bottom: 0.75rem; }
     .form-row label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.3rem;
+      display: flex; justify-content: space-between;
+      font-size: 0.8rem; color: var(--text2); margin-bottom: 0.3rem;
     }
 
-    /* ─── Buttons ───────────────────────────────────────────── */
+    /* Buttons */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%;
     }
-
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #0090cc);
-      color: #000;
+      background: linear-gradient(135deg, var(--accent), #0090cc); color: #000;
     }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,255,0.3); }
+    .btn-secondary { background: var(--bg-hover); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-test {
+      background: linear-gradient(135deg, var(--ok), #00aa55); color: #000;
     }
+    .btn-test:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,255,136,0.3); }
+    .btn-group { display: flex; gap: 0.75rem; margin-top: 1rem; }
 
-    .btn-secondary {
-      background: var(--bg-card-hover);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--border);
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    /* ─── Game Screen ──────────────────────────────────────── */
-    #game-screen {
-      width: 100vw;
-      height: 100vh;
-    }
-
-    #game-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* ─── Keyboard shortcut hints ──────────────────────────── */
-    .shortcuts {
-      display: flex;
-      gap: 1.5rem;
-      justify-content: center;
-      margin-top: 0.5rem;
-    }
-
-    .shortcut {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
+    .shortcuts { display: flex; gap: 1.5rem; justify-content: center; margin-top: 0.5rem; }
+    .shortcut { font-size: 0.75rem; color: var(--text2); }
     kbd {
-      display: inline-block;
-      padding: 0.1rem 0.4rem;
-      font-size: 0.7rem;
-      background: var(--bg-card-hover);
+      display: inline-block; padding: 0.1rem 0.4rem; font-size: 0.7rem;
+      background: var(--bg-hover); border: 1px solid var(--border);
+      border-radius: 4px; font-family: monospace; margin-right: 0.25rem;
+    }
+    #midi-file { display: none; }
+
+    /* ─── Game Screen ──────────────────────────────── */
+    #game-screen { width: 100vw; height: 100vh; }
+    #game-canvas { width: 100%; height: 100%; display: block; }
+
+    /* ─── Diagnostics Screen ───────────────────────── */
+    #diag-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+
+    .diag-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.5rem; background: var(--bg-card); border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .diag-header h2 {
+      font-size: 1.1rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--ok), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .diag-header-btns { display: flex; gap: 0.5rem; }
+    .diag-header .btn { width: auto; padding: 0.4rem 1rem; font-size: 0.85rem; }
+
+    #diag-container { flex: 1; overflow: hidden; }
+
+    /* Diagnostics internal layout */
+    .diag-layout { display: flex; flex-direction: column; height: 100%; }
+
+    .diag-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 1rem; flex-shrink: 0;
+    }
+    .diag-stats { display: flex; gap: 1.5rem; }
+    .stat { display: flex; flex-direction: column; align-items: center; }
+    .stat-val { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text2); letter-spacing: 0.5px; }
+
+    .diag-pedals { display: flex; gap: 0.75rem; }
+    .pedal-box {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.3rem 0.7rem; border-radius: 6px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      font-size: 0.8rem; color: var(--text2); transition: all 0.15s;
+    }
+    .pedal-box.active {
+      background: var(--ok); color: #000; border-color: var(--ok);
+      box-shadow: 0 0 12px rgba(0,255,136,0.4);
+    }
+    .pedal-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text2); transition: background 0.15s;
+    }
+    .pedal-box.active .pedal-dot { background: #000; }
+
+    .diag-keyboard-wrap {
+      flex-shrink: 0; padding: 0 1rem; position: relative;
+    }
+    #diag-canvas { width: 100%; height: 130px; border-radius: 8px; display: block; }
+
+    .diag-velocity-bar {
+      position: relative; height: 20px; background: var(--bg-card);
+      border-radius: 4px; margin-top: 0.5rem; overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 4px;
-      font-family: monospace;
-      margin-right: 0.25rem;
+    }
+    .vel-fill {
+      height: 100%; width: 0%; background: var(--accent);
+      transition: width 0.08s ease-out;
+      border-radius: 3px;
+    }
+    .vel-label {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      font-size: 0.75rem; font-weight: 600; color: var(--text);
     }
 
-    /* ─── Hidden file input ────────────────────────────────── */
-    #midi-file { display: none; }
+    .diag-coverage {
+      padding: 0.5rem 1rem; flex-shrink: 0;
+    }
+    .coverage-label { font-size: 0.8rem; color: var(--text2); margin-bottom: 0.3rem; }
+    .coverage-label span { color: var(--accent); font-weight: 600; }
+    #coverage-bar {
+      display: flex; height: 12px; gap: 0; border-radius: 4px; overflow: hidden;
+      background: var(--bg-card); border: 1px solid var(--border);
+    }
+    .cov-key { flex: 1; min-width: 0; transition: background 0.2s; }
+    .cov-white { background: #1a1a2e; }
+    .cov-black { background: #0d0d15; }
+    .cov-key.cov-hit.cov-white { background: var(--ok); }
+    .cov-key.cov-hit.cov-black { background: var(--accent); }
+
+    .diag-last-note {
+      padding: 0.5rem 1rem; flex-shrink: 0;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .last-note-label { font-size: 0.8rem; color: var(--text2); }
+    .last-note-value { font-size: 1rem; font-weight: 700; color: var(--accent); font-family: monospace; }
+
+    .diag-log-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      padding: 0 1rem 0.5rem 1rem; min-height: 0;
+    }
+    .diag-log-header {
+      font-size: 0.8rem; color: var(--text2); padding: 0.4rem 0;
+      display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+    }
+    .log-count {
+      background: var(--bg-hover); padding: 0.1rem 0.5rem;
+      border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+    }
+    .diag-log {
+      flex: 1; overflow-y: auto; font-family: "SF Mono", "Cascadia Code", monospace;
+      font-size: 0.75rem; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.5rem; min-height: 0;
+    }
+    .log-entry { padding: 0.15rem 0.3rem; border-radius: 2px; white-space: nowrap; }
+    .log-note-on { color: var(--ok); }
+    .log-note-off { color: var(--text2); }
+    .log-pedal { color: var(--gold); }
+    .log-raw { color: var(--warm); }
+
+    .diag-log::-webkit-scrollbar { width: 6px; }
+    .diag-log::-webkit-scrollbar-track { background: transparent; }
+    .diag-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -231,27 +227,22 @@
       <p class="subtitle">Disklavier Edition</p>
     </div>
 
-    <!-- MIDI Connection -->
     <div class="card">
       <h2>MIDI Connection</h2>
       <div class="midi-indicator">
-        <div class="midi-dot"></div>
+        <div class="midi-dot disconnected" id="midi-dot"></div>
         <span id="midi-status">Detecting MIDI devices...</span>
       </div>
       <div class="form-row">
-        <select id="device-select">
-          <option value="">Select MIDI device...</option>
-        </select>
+        <select id="device-select"><option value="">Select MIDI device...</option></select>
       </div>
+      <button class="btn btn-test" id="test-midi" style="margin-top:0.75rem">Test MIDI Connection</button>
     </div>
 
-    <!-- Song Selection -->
     <div class="card">
       <h2>Play</h2>
       <div class="form-row">
-        <label>
-          <span>Difficulty</span>
-        </label>
+        <label><span>Difficulty</span></label>
         <select id="difficulty-select">
           <option value="easy">Easy — Melody only</option>
           <option value="medium">Medium — Melody + Bass</option>
@@ -266,21 +257,14 @@
       <input type="file" id="midi-file" accept=".mid,.midi" />
     </div>
 
-    <!-- Settings -->
     <div class="card">
       <h2>Settings</h2>
       <div class="form-row">
-        <label>
-          <span>Latency Offset</span>
-          <span id="latency-value">0ms</span>
-        </label>
+        <label><span>Latency Offset</span><span id="latency-value">0ms</span></label>
         <input type="range" id="latency-offset" min="-100" max="100" value="0" step="5" />
       </div>
       <div class="form-row">
-        <label>
-          <span>Scroll Speed</span>
-          <span id="speed-value">3s</span>
-        </label>
+        <label><span>Scroll Speed</span><span id="speed-value">3s</span></label>
         <input type="range" id="scroll-speed" min="1" max="6" value="3" step="0.5" />
       </div>
     </div>
@@ -296,7 +280,17 @@
     <canvas id="game-canvas"></canvas>
   </div>
 
-  <div id="results-overlay" class="hidden"></div>
+  <!-- ═══ Diagnostics Screen ═══ -->
+  <div id="diag-screen" class="hidden">
+    <div class="diag-header">
+      <h2>MIDI Diagnostics</h2>
+      <div class="diag-header-btns">
+        <button class="btn btn-secondary" id="diag-reset">Reset Stats</button>
+        <button class="btn btn-secondary" id="diag-back">Back to Menu</button>
+      </div>
+    </div>
+    <div id="diag-container"></div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
