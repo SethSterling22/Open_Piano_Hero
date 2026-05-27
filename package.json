@@ -1,0 +1,17 @@
+{
+  "name": "piano-hero",
+  "version": "0.1.0",
+  "description": "Guitar Hero-style game for Yamaha Disklavier DC2X ENSPIRE ST using Web MIDI API",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tonejs/midi": "^2.0.28"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

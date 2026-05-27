@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piano Hero — Disklavier Edition</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-card-hover: #1a1a28;
+      --border: #2a2a3a;
+      --text: #e8e8f0;
+      --text-secondary: #888899;
+      --accent: #00d4ff;
+      --accent-warm: #ff6b35;
+      --gold: #ffdd00;
+      --success: #00ff88;
+      --danger: #ff3355;
+    }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ─── Menu Screen ──────────────────────────────────────── */
+    #menu-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .logo {
+      text-align: center;
+    }
+
+    .logo h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-warm));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+
+    .logo .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+    }
+
+    /* ─── Cards ─────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    /* ─── MIDI Status ──────────────────────────────────────── */
+    .midi-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .midi-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .status-ok .midi-dot,
+    .status-ok + .midi-controls .midi-dot { background: var(--success); }
+    .status-warn .midi-dot { background: var(--gold); }
+    .status-error .midi-dot { background: var(--danger); }
+
+    #midi-status {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Form Controls ────────────────────────────────────── */
+    select, input[type="range"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      margin-bottom: 0.75rem;
+    }
+
+    .form-row label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.3rem;
+    }
+
+    /* ─── Buttons ───────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0090cc);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    /* ─── Game Screen ──────────────────────────────────────── */
+    #game-screen {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ─── Keyboard shortcut hints ──────────────────────────── */
+    .shortcuts {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .shortcut {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.7rem;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: monospace;
+      margin-right: 0.25rem;
+    }
+
+    /* ─── Hidden file input ────────────────────────────────── */
+    #midi-file { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Menu Screen ═══ -->
+  <div id="menu-screen">
+    <div class="logo">
+      <h1>Piano Hero</h1>
+      <p class="subtitle">Disklavier Edition</p>
+    </div>
+
+    <!-- MIDI Connection -->
+    <div class="card">
+      <h2>MIDI Connection</h2>
+      <div class="midi-indicator">
+        <div class="midi-dot"></div>
+        <span id="midi-status">Detecting MIDI devices...</span>
+      </div>
+      <div class="form-row">
+        <select id="device-select">
+          <option value="">Select MIDI device...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Song Selection -->
+    <div class="card">
+      <h2>Play</h2>
+      <div class="form-row">
+        <label>
+          <span>Difficulty</span>
+        </label>
+        <select id="difficulty-select">
+          <option value="easy">Easy — Melody only</option>
+          <option value="medium">Medium — Melody + Bass</option>
+          <option value="hard" selected>Hard — Full arrangement</option>
+          <option value="expert">Expert — Every note, exact velocity</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="load-midi">Load MIDI File</button>
+        <button class="btn btn-secondary" id="play-demo">Demo</button>
+      </div>
+      <input type="file" id="midi-file" accept=".mid,.midi" />
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="form-row">
+        <label>
+          <span>Latency Offset</span>
+          <span id="latency-value">0ms</span>
+        </label>
+        <input type="range" id="latency-offset" min="-100" max="100" value="0" step="5" />
+      </div>
+      <div class="form-row">
+        <label>
+          <span>Scroll Speed</span>
+          <span id="speed-value">3s</span>
+        </label>
+        <input type="range" id="scroll-speed" min="1" max="6" value="3" step="0.5" />
+      </div>
+    </div>
+
+    <div class="shortcuts">
+      <span class="shortcut"><kbd>SPACE</kbd> Pause / Resume</span>
+      <span class="shortcut"><kbd>ESC</kbd> Back to menu</span>
+    </div>
+  </div>
+
+  <!-- ═══ Game Screen ═══ -->
+  <div id="game-screen" class="hidden">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <div id="results-overlay" class="hidden"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
